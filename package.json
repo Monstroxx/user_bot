@@ -1,0 +1,16 @@
+{
+  "name": "discord-bot-automation",
+  "version": "1.0.0",
+  "description": "Browser automation for Discord channel navigation",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["discord", "automation", "browser", "puppeteer"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}
