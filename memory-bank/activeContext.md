@@ -1,15 +1,17 @@
 # Active Context
 
 ## Current Focus
-Erweitere die Discord Browser-Automatisierung um erweiterte Multi-Config Features:
+Erweitere die Discord Browser-Automatisierung um weitere fortgeschrittene Features:
 1. ✅ Konfigurationsdatei für Channel-ID
 2. ✅ Hauptscript mit Puppeteer
 3. ✅ Discord-Login-Erkennung
 4. ✅ Automatische Channel-Navigation
 5. ✅ Automatisches Senden einer konfigurierbaren Nachricht
 6. ✅ Intervall-basierte Nachrichtenwiederholung
-7. 🔄 Random Delays für natürlichere Timing
-8. 🔄 Multi-Config für mehrere Channels und Nachrichten
+7. ✅ Random Delays für natürlichere Timing
+8. ✅ Multi-Config für mehrere Channels und Nachrichten
+9. 🔄 Random Message Selection aus mehreren Nachrichten
+10. 🔄 !exit Command zum dynamischen Stoppen des Bots
 
 ## Recent Decisions
 - Puppeteer als Browser-Automatisierung (stabil und gut dokumentiert)
@@ -33,5 +35,7 @@ Erweitere die Discord Browser-Automatisierung um erweiterte Multi-Config Feature
 - setInterval für wiederholte Nachrichten mit konfigurierbarem Intervall
 - Random Delays mit Min/Max-Bereichen für natürlichere Timing
 - Multi-Config Array-basierte Konfiguration für mehrere Channels/Nachrichten
+- Random Message Selection: message1, message2, message3, etc. mit randomMessage flag
+- !exit Command Monitoring durch DOM-Überwachung der Nachrichten
 - Parallele oder sequenzielle Abarbeitung der Configs
 - Graceful Shutdown mit Intervall-Cleanup

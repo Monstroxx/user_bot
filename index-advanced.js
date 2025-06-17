@@ -10,6 +10,8 @@ class AdvancedDiscordBot {
         this.activeIntervals = new Map(); // channelId -> intervalId
         this.messageCounts = new Map(); // channelId -> count
         this.currentChannelId = null;
+        this.exitCommandActive = false;
+        this.exitCheckInterval = null;
     }
 
     async loadConfig() {
@@ -77,14 +79,17 @@ class AdvancedDiscordBot {
 
     validateSingleConfig(config) {
         // Validiere Nachrichtenkonfiguration
-        if (config.sendMessage && !config.message) {
+        const hasRandomMessages = this.hasRandomMessages(config);
+        const hasSingleMessage = config.message;
+        
+        if (config.sendMessage && !hasRandomMessages && !hasSingleMessage) {
             console.warn(`⚠️  sendMessage aktiviert, aber keine Nachricht konfiguriert (${config.name || 'Config'})`);
             config.sendMessage = false;
         }
         
         // Validiere Intervall
         if (config.repeatMessage && config.repeatInterval < 3000) {
-            console.warn(`⚠️  Intervall zu kurz, setze auf 1 Minute (${config.name || 'Config'})`);
+            console.warn(`⚠️  Intervall zu kurz, setze auf 3 Sekunden (${config.name || 'Config'})`);
             config.repeatInterval = 3000;
         }
         
@@ -95,6 +100,36 @@ class AdvancedDiscordBot {
                 config.randomDelay = false;
             }
         }
+        
+        // Validiere Random Messages
+        if (config.randomMessage && !hasRandomMessages) {
+            console.warn(`⚠️  randomMessage aktiviert, aber keine message1, message2, etc. gefunden (${config.name || 'Config'})`);
+            config.randomMessage = false;
+        }
+    }
+
+    hasRandomMessages(config) {
+        return Object.keys(config).some(key => key.match(/^message\d+$/));
+    }
+
+    getRandomMessage(config) {
+        if (!config.randomMessage) {
+            return config.message || '';
+        }
+        
+        // Sammle alle messageX Felder
+        const messageKeys = Object.keys(config).filter(key => key.match(/^message\d+$/));
+        
+        if (messageKeys.length === 0) {
+            return config.message || '';
+        }
+        
+        // Wähle zufällige Nachricht
+        const randomKey = messageKeys[Math.floor(Math.random() * messageKeys.length)];
+        const selectedMessage = config[randomKey];
+        
+        console.log(`🎲 Zufällige Nachricht gewählt: ${randomKey} = "${selectedMessage}"`);
+        return selectedMessage;
     }
 
     async startBrowser() {
@@ -154,6 +189,95 @@ class AdvancedDiscordBot {
         }
     }
 
+    async setupExitCommandListener() {
+        try {
+            console.log('🎧 Aktiviere !exit Command Listener...');
+            
+            // Setze initial flag
+            await this.page.evaluate(() => {
+                window.botExitRequested = false;
+            });
+            
+            // Starte häufigeres Exit-Check Intervall (alle 2 Sekunden)
+            this.exitCheckInterval = setInterval(async () => {
+                await this.checkExitCommand();
+            }, 2000);
+            
+            console.log('✅ !exit Command Listener aktiv (Check alle 2 Sekunden)');
+            
+        } catch (error) {
+            console.warn('⚠️  Konnte !exit Listener nicht einrichten:', error.message);
+        }
+    }
+
+    async checkExitCommand() {
+        try {
+            // Prüfe alle sichtbaren Nachrichten im aktuellen Channel
+            const exitFound = await this.page.evaluate(() => {
+                // Erweiterte Suche nach Discord-Nachrichten
+                const messageSelectors = [
+                    '[class*="messageContent"]',
+                    '[class*="markup"]',
+                    '.messageContent',
+                    '[data-testid="message-content"]',
+                    'div[class*="content"] span',
+                    '.content span',
+                    '[role="document"] span'
+                ];
+                
+                let found = false;
+                
+                for (const selector of messageSelectors) {
+                    try {
+                        const messages = document.querySelectorAll(selector);
+                        for (const message of messages) {
+                            const text = message.textContent?.trim();
+                            if (text === '!exit') {
+                                console.log(`!exit Command gefunden in: ${selector}`);
+                                console.log(`Nachrichtentext: "${text}"`);
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (found) break;
+                    } catch (e) {
+                        // Weiter suchen bei Fehlern
+                    }
+                }
+                
+                // Zusätzlich: Suche in allen Text-Nodes
+                if (!found) {
+                    const walker = document.createTreeWalker(
+                        document.body,
+                        NodeFilter.SHOW_TEXT,
+                        null,
+                        false
+                    );
+                    
+                    let node;
+                    while (node = walker.nextNode()) {
+                        if (node.textContent?.trim() === '!exit') {
+                            console.log('!exit Command in Text-Node gefunden!');
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                
+                return found;
+            });
+            
+            if (exitFound) {
+                console.log('🛑 !exit Command erkannt - Bot wird beendet...');
+                await this.cleanup();
+                process.exit(0);
+            }
+        } catch (error) {
+            // Ignoriere Fehler beim Exit-Check
+            console.log('⚠️  Fehler beim Exit-Check:', error.message);
+        }
+    }
+
     async navigateToChannel(channelId) {
         try {
             console.log(`📍 Navigiere zu Channel: ${channelId}`);
@@ -187,12 +311,18 @@ class AdvancedDiscordBot {
     }
 
     async sendMessage(config, isRepeat = false, configName = '') {
-        if (!config.sendMessage || !config.message) {
+        const hasRandomMessages = this.hasRandomMessages(config);
+        const hasSingleMessage = config.message;
+        
+        if (!config.sendMessage || (!hasRandomMessages && !hasSingleMessage)) {
             console.log(`📝 Nachrichtensendung deaktiviert ${configName ? `(${configName})` : ''}`);
             return false;
         }
 
         try {
+            // Check !exit command vor dem Senden
+            await this.checkExitCommand();
+            
             const channelId = config.channelId;
             const count = this.messageCounts.get(channelId) || 0;
             
@@ -214,6 +344,9 @@ class AdvancedDiscordBot {
             if (!isRepeat) {
                 await this.page.waitForTimeout(config.messageDelay || 2000);
             }
+            
+            // Wähle Nachricht (random oder single)
+            const messageToSend = this.getRandomMessage(config);
 
             // Finde Nachrichteneingabefeld
             const messageSelectors = [
@@ -243,7 +376,7 @@ class AdvancedDiscordBot {
             // Nachricht senden
             await messageBox.click();
             await this.page.waitForTimeout(500);
-            await messageBox.type(config.message);
+            await messageBox.type(messageToSend);
             await this.page.waitForTimeout(500);
             await this.page.keyboard.press('Enter');
             
@@ -280,6 +413,9 @@ class AdvancedDiscordBot {
         }
 
         const intervalId = setInterval(async () => {
+            // Check !exit command zuerst
+            await this.checkExitCommand();
+            
             const currentCount = this.messageCounts.get(channelId) || 0;
             
             // Prüfe Maximal-Anzahl
@@ -322,6 +458,13 @@ class AdvancedDiscordBot {
 
     async cleanup() {
         this.stopAllIntervals();
+        
+        // Stoppe auch Exit-Check Intervall
+        if (this.exitCheckInterval) {
+            clearInterval(this.exitCheckInterval);
+            this.exitCheckInterval = null;
+        }
+        
         if (this.browser) {
             console.log('🧹 Schließe Browser...');
             await this.browser.close();
@@ -383,6 +526,9 @@ class AdvancedDiscordBot {
             await this.openDiscord();
             await this.waitForLogin();
             
+            // Aktiviere !exit Command Listener
+            await this.setupExitCommandListener();
+            
             // Führe entsprechenden Modus aus
             if (this.config.mode === 'single') {
                 await this.runSingleMode();
@@ -392,6 +538,7 @@ class AdvancedDiscordBot {
             
             console.log('\n🎉 Bot erfolgreich gestartet!');
             console.log('   Browser bleibt offen für weitere Nutzung.');
+            console.log('   💬 Schreibe "!exit" in einen überwachten Channel zum Beenden');
             
             // Zeige aktive Intervalle
             if (this.activeIntervals.size > 0) {

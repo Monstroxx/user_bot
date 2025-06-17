@@ -121,3 +121,119 @@ user_bot/
 ```
 
 Beide Versionen können parallel verwendet werden!
+## 🆕 Neueste Features (v2.0)
+
+### 🎲 Random Message Selection
+Definieren Sie mehrere Nachrichten pro Konfiguration und lassen Sie den Bot zufällig auswählen:
+
+```json
+{
+  "name": "OwO Hunt Bot",
+  "channelId": "IHRE_CHANNEL_ID",
+  "message1": "OwO hunt",
+  "message2": "owo hunt", 
+  "message3": "Hunt time! OwO",
+  "message4": "owo hunt pls",
+  "randomMessage": true,
+  "sendMessage": true,
+  "repeatMessage": true,
+  "repeatInterval": 20000,
+  "randomDelay": true,
+  "randomDelayMin": 0,
+  "randomDelayMax": 5000
+}
+```
+
+**Wie es funktioniert:**
+- Fügen Sie `message1`, `message2`, `message3`, etc. hinzu
+- Setzen Sie `"randomMessage": true`
+- Bot wählt bei jedem Senden eine zufällige Nachricht
+- Console zeigt an: `🎲 Zufällige Nachricht gewählt: message2 = "owo hunt"`
+
+### 🛑 !exit Command
+Stoppen Sie den Bot dynamisch durch Eingabe in Discord:
+
+**So funktioniert es:**
+1. Bot läuft und überwacht alle aktiven Channels
+2. Schreiben Sie `!exit` in einen der überwachten Channels
+3. Bot erkennt den Command sofort und beendet sich graceful
+4. Console zeigt: `🛑 !exit Command erkannt - Bot wird beendet...`
+
+**Vorteile:**
+- Kein Wechsel zur Console nötig
+- Sofortiges Stoppen aus Discord heraus
+- Funktioniert in allen aktiven Channels
+- Graceful Shutdown mit Cleanup
+
+### ⚡ Optimiert für Gaming Bots
+Perfekt konfiguriert für OwO-Bot und ähnliche Discord Gaming Bots:
+
+**Beispiel OwO Hunt Config:**
+```json
+{
+  "mode": "multi",
+  "multiConfigs": [
+    {
+      "name": "OwO Hunt",
+      "channelId": "IHRE_CHANNEL_ID",
+      "message1": "OwO hunt",
+      "message2": "owo hunt",
+      "message3": "owo h",
+      "message4": "Hunt time!",
+      "randomMessage": true,
+      "repeatMessage": true,
+      "repeatInterval": 20000,
+      "randomDelay": true,
+      "randomDelayMin": 0,
+      "randomDelayMax": 3000
+    },
+    {
+      "name": "OwO Battle", 
+      "channelId": "IHRE_CHANNEL_ID",
+      "message1": "OwO battle",
+      "message2": "owo battle",
+      "message3": "owo b",
+      "randomMessage": true,
+      "repeatMessage": true,
+      "repeatInterval": 25000,
+      "randomDelay": true,
+      "randomDelayMin": 1000,
+      "randomDelayMax": 5000
+    }
+  ]
+}
+```
+
+## 🎮 Gaming Bot Features
+
+### ✅ Anti-Detection Features
+- **Random Message Selection**: Variiert Befehle automatisch
+- **Random Delays**: Unregelmäßige Timing-Muster
+- **Kurze Intervalle**: 3+ Sekunden möglich (statt 1 Minute)
+- **Natürliche Variation**: Sieht menschlicher aus
+
+### 📊 Console Output Beispiel
+```
+✅ Erweiterte Konfiguration geladen (config-advanced.json)
+🎧 Aktiviere !exit Command Listener...
+✅ !exit Command Listener aktiv
+🎯 Modus: Mehrere Channels
+
+📋 Verarbeite: OwO Hunt
+🎲 Zufällige Nachricht gewählt: message2 = "owo hunt"
+📝 Sende Nachricht - OwO Hunt
+⏲️  Random Delay: 2.3s (OwO Hunt)
+✅ Nachricht gesendet! - OwO Hunt
+🔄 Starte Wiederholung alle 20 Sec - OwO Hunt
+
+🎉 Bot erfolgreich gestartet!
+   💬 Schreibe "!exit" in einen überwachten Channel zum Beenden
+   📝 Aktive Wiederholungen: 2
+```
+
+### 🛡️ Sicherheitshinweise
+- **Discord ToS**: Verwenden Sie Bots verantwortungsvoll
+- **Rate Limits**: Überschreiten Sie nicht Discord's Limits
+- **Angemessene Intervalle**: Mindestens 10-15 Sekunden zwischen Commands
+- **Überwachung**: Bleiben Sie in der Nähe für manuelle Kontrolle
+

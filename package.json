@@ -7,6 +7,7 @@
     "start": "node index.js",
     "start-advanced": "node index-advanced.js",
     "start-basic": "node index.js",
+    "debug-exit": "node debug-exit.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["discord", "automation", "browser", "puppeteer"],

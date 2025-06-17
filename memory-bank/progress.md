@@ -15,11 +15,14 @@
 - ✅ Konfigurierbare Wiederholungslimits
 - ✅ Random Delays für natürlichere Timing
 - ✅ Multi-Channel/Multi-Message Support
+- ✅ Random Message Selection (message1, message2, etc.)
+- ✅ !exit Command für dynamisches Stoppen
 - ✅ Erweiterte Konfigurationsvalidierung
 - ✅ Parallele Intervall-Verwaltung
 - ✅ Graceful Shutdown mit Cleanup
 - ✅ Fehlerbehandlung pro Channel
 - ✅ README mit Anweisungen (basic + advanced)
+- ✅ Gaming Bot optimierte Features (OwO Bot etc.)
 
 ## In Progress
 - Testen der erweiterten Funktionalität
