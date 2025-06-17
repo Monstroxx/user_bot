@@ -3,6 +3,17 @@ import json
 import os
 from datetime import datetime
 
+# Kompatibilität für verschiedene Streamlit-Versionen
+def safe_rerun():
+    """Kompatible Rerun-Funktion für verschiedene Streamlit-Versionen"""
+    try:
+        st.rerun()
+    except AttributeError:
+        try:
+            st.experimental_rerun()
+        except AttributeError:
+            st.warning("Bitte die Seite manuell neu laden (F5)")
+
 # Seitenkonfiguration
 st.set_page_config(
     page_title="Discord Bot Config Editor",
@@ -222,13 +233,13 @@ def render_message_inputs(prefix, config_item, key_prefix):
             if len(message_keys) > 1:
                 if st.button("🗑️", key=f"{key_prefix}_del_{msg_key}", help="Nachricht löschen"):
                     del config_item[msg_key]
-                    st.rerun()
+                    safe_rerun()
     
     # Neue Nachricht hinzufügen
     if st.button(f"➕ Neue Nachricht hinzufügen", key=f"{key_prefix}_add"):
         next_num = max([int(k[7:]) for k in message_keys if k[7:].isdigit()] + [0]) + 1
         config_item[f"message{next_num}"] = ""
-        st.rerun()
+        safe_rerun()
     
     # Random Message Toggle
     config_item["randomMessage"] = st.checkbox(
@@ -379,7 +390,7 @@ def render_multi_config(config):
             with col2:
                 if st.button("🗑️ Löschen", key=f"multi_delete_{i}", type="secondary"):
                     multi_configs.pop(i)
-                    st.rerun()
+                    safe_rerun()
             
             # Channel ID
             config_item["channelId"] = st.text_input(
@@ -433,7 +444,7 @@ def render_multi_config(config):
             "clearFieldBeforeTyping": False
         }
         multi_configs.append(new_config)
-        st.rerun()
+        safe_rerun()
     
     config["multiConfigs"] = multi_configs
     st.markdown('</div>', unsafe_allow_html=True)
@@ -583,13 +594,13 @@ def main():
             config["singleConfig"].update(preset)
         del st.session_state['preset_to_load']
         st.success("Preset geladen!")
-        st.rerun()
+        safe_rerun()
     
     if 'preset_complete' in st.session_state:
         config["multiConfigs"].extend(st.session_state['preset_complete'])
         del st.session_state['preset_complete']
         st.success("Complete Set geladen!")
-        st.rerun()
+        safe_rerun()
     
     # Tabs
     tab1, tab2, tab3, tab4 = st.tabs(["🌐 Global", "🎯 Konfiguration", "🎮 Presets", "📋 JSON View"])
@@ -630,7 +641,7 @@ def main():
                     imported_config = json.load(uploaded_file)
                     st.session_state.config = imported_config
                     st.success("Konfiguration importiert!")
-                    st.rerun()
+                    safe_rerun()
                 except Exception as e:
                     st.error(f"Fehler beim Importieren: {e}")
 
