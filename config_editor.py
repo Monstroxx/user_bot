@@ -781,7 +781,93 @@ def main():
         render_presets()
     
     with tab4:
-        render_bot_control_tab(config_manager)
+        # Bot Control Tab (vereinfacht)
+        st.markdown('<div class="config-section">', unsafe_allow_html=True)
+        st.subheader("🤖 Bot Control Center")
+        
+        # Dependencies prüfen
+        st.write("**🔧 System Status:**")
+        issues = check_dependencies()
+        if issues:
+            for issue in issues:
+                st.error(f"❌ {issue}")
+            st.warning("⚠️ Bot kann möglicherweise nicht gestartet werden!")
+        else:
+            st.success("🎯 Alle Dependencies OK!")
+        
+        st.markdown("---")
+        
+        # Bot starten Buttons
+        st.subheader("🚀 Bot starten")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("🚀 Advanced Bot starten", type="primary", use_container_width=True):
+                # Speichere Konfiguration vor Start
+                if config_manager.save_config(st.session_state.config):
+                    st.success("✅ Konfiguration gespeichert")
+                    
+                    process, success, message = start_bot("advanced")
+                    if success:
+                        st.success(message)
+                        st.info("🎮 Bot startet in separatem Fenster...")
+                        st.info("💡 Du kannst das Bot-Fenster minimieren und das Interface offen lassen")
+                    else:
+                        st.error(message)
+                else:
+                    st.error("❌ Fehler beim Speichern der Konfiguration")
+        
+        with col2:
+            if st.button("⚡ Basic Bot starten", type="secondary", use_container_width=True):
+                if config_manager.save_config(st.session_state.config):
+                    process, success, message = start_bot("basic")
+                    if success:
+                        st.success(message)
+                        st.info("🎮 Bot startet in separatem Fenster...")
+                    else:
+                        st.error(message)
+                else:
+                    st.error("❌ Fehler beim Speichern der Konfiguration")
+        
+        st.markdown("---")
+        
+        # Test Tools
+        st.subheader("🧪 Test Tools")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📝 Message Test", use_container_width=True):
+                process, success, message = start_test_tool("messages")
+                if success:
+                    st.success(message)
+                    st.info("🧪 Test startet in separatem Fenster...")
+                else:
+                    st.error(message)
+        
+        with col2:
+            if st.button("🚪 Exit Debug", use_container_width=True):
+                process, success, message = start_test_tool("debug-exit")
+                if success:
+                    st.success(message)
+                    st.info("🐛 Debug startet in separatem Fenster...")
+                else:
+                    st.error(message)
+        
+        st.markdown("---")
+        
+        # Manual Commands (Fallback)
+        st.subheader("📋 Manual Commands")
+        st.write("Falls die Buttons nicht funktionieren, verwende diese Befehle im Terminal:")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.code("npm run start-advanced", language="bash")
+        with col2:
+            st.code("npm run test-messages", language="bash")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
     
     with tab5:
         st.subheader("📋 Aktuelle Konfiguration (JSON)")
