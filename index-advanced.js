@@ -373,69 +373,27 @@ class AdvancedDiscordBot {
                 throw new Error('Nachrichteneingabefeld nicht gefunden');
             }
             
-            // Nachricht senden mit konfigurierbarer Anti-Merge Methode
+            // Einfache, zuverlässige Nachrichtensendung
             await messageBox.click();
             await this.page.waitForTimeout(500);
             
-            const globalSettings = this.config.globalSettings || {};
-            const typingSpeed = config.typingSpeed || globalSettings.typingSpeed || 50;
-            const preventMerging = config.preventMessageMerging !== undefined ? 
-                config.preventMessageMerging : (globalSettings.preventMessageMerging !== false);
-            const clearField = config.clearFieldBeforeTyping !== undefined ? 
-                config.clearFieldBeforeTyping : (globalSettings.clearFieldBeforeTyping !== false);
+            // Lösche vorhandenen Inhalt sicher
+            await this.page.keyboard.down('Control');
+            await this.page.keyboard.press('KeyA');
+            await this.page.keyboard.up('Control');
+            await this.page.waitForTimeout(100);
             
-            if (preventMerging) {
-                console.log(`⌨️  Anti-Merge aktiviert: Typing Speed ${typingSpeed}ms`);
-                
-                if (clearField) {
-                    // Stelle sicher, dass das Feld leer ist
-                    await this.page.keyboard.down('Control');
-                    await this.page.keyboard.press('KeyA');
-                    await this.page.keyboard.up('Control');
-                    await this.page.waitForTimeout(200);
-                    
-                    // Lösche vorhandenen Inhalt
-                    await this.page.keyboard.press('Delete');
-                    await this.page.waitForTimeout(300);
-                }
-                
-                // Schreibe Nachricht Zeichen für Zeichen
-                for (const char of messageToSend) {
-                    await this.page.keyboard.type(char);
-                    await this.page.waitForTimeout(typingSpeed);
-                }
-                
-                // Warte vor dem Senden
-                await this.page.waitForTimeout(800);
-                
-                // Prüfe ob der Text korrekt im Feld steht
-                const inputText = await messageBox.evaluate(el => el.textContent || el.value || '');
-                
-                if (inputText.trim() !== messageToSend.trim()) {
-                    console.warn(`⚠️  Text korrigiert: "${inputText}" → "${messageToSend}"`);
-                    // Korrigiere falls nötig
-                    await this.page.keyboard.down('Control');
-                    await this.page.keyboard.press('KeyA');
-                    await this.page.keyboard.up('Control');
-                    await this.page.waitForTimeout(200);
-                    
-                    for (const char of messageToSend) {
-                        await this.page.keyboard.type(char);
-                        await this.page.waitForTimeout(typingSpeed + 20);
-                    }
-                    await this.page.waitForTimeout(500);
-                }
-            } else {
-                // Schnelle Methode (alte Art)
-                await messageBox.type(messageToSend);
-                await this.page.waitForTimeout(500);
-            }
+            // Verwende die bewährte type() Methode
+            await messageBox.type(messageToSend);
+            await this.page.waitForTimeout(300);
+            
+            console.log(`📝 Nachricht eingegeben: "${messageToSend}"`);
             
             // Sende die Nachricht
             await this.page.keyboard.press('Enter');
             
-            // Warte nach dem Senden um Überlappungen zu verhindern
-            await this.page.waitForTimeout(1200);
+            // Kurze Pause nach dem Senden
+            await this.page.waitForTimeout(1000);
             
             // Counter aktualisieren
             this.messageCounts.set(channelId, count + 1);
