@@ -165,6 +165,12 @@ Stoppen Sie den Bot dynamisch durch Eingabe in Discord:
 - Funktioniert in allen aktiven Channels
 - Graceful Shutdown mit Cleanup
 
+### 🛡️ Anti-Message-Merging
+- **Zeichen-für-Zeichen Eingabe**: Verhindert dass Nachrichten zusammengefasst werden
+- **Konfigurierbare Typing-Geschwindigkeit**: 20-100ms zwischen Zeichen
+- **Feld-Clearing**: Leert Eingabefeld vor jeder Nachricht
+- **Text-Verifikation**: Prüft ob Nachricht korrekt eingegeben wurde
+
 ### ⚡ Optimiert für Gaming Bots
 Perfekt konfiguriert für OwO-Bot und ähnliche Discord Gaming Bots:
 
