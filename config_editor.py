@@ -20,7 +20,7 @@ def safe_rerun():
 
 # Bot-Management Funktionen
 def start_bot(bot_type="advanced"):
-    """Startet den Discord Bot mit Live-Logging"""
+    """Startet den Discord Bot mit verbessertem Error Handling"""
     try:
         if bot_type == "advanced":
             cmd = ["node", "index-advanced.js"]
@@ -36,6 +36,20 @@ def start_bot(bot_type="advanced"):
         st.session_state.debug_logs.append(f"🔧 Starte Befehl: {' '.join(cmd)}")
         st.session_state.debug_logs.append(f"📁 Arbeitsverzeichnis: {os.getcwd()}")
         
+        # Prüfe ob Node.js verfügbar ist
+        try:
+            node_result = subprocess.run(["node", "--version"], capture_output=True, text=True, timeout=5)
+            if node_result.returncode != 0:
+                st.session_state.debug_logs.append("❌ Node.js nicht verfügbar")
+                return None, False, "❌ Node.js ist nicht verfügbar oder funktioniert nicht"
+            st.session_state.debug_logs.append(f"✅ Node.js Version: {node_result.stdout.strip()}")
+        except subprocess.TimeoutExpired:
+            st.session_state.debug_logs.append("❌ Node.js Timeout")
+            return None, False, "❌ Node.js antwortet nicht (Timeout)"
+        except FileNotFoundError:
+            st.session_state.debug_logs.append("❌ Node.js nicht installiert")
+            return None, False, "❌ Node.js ist nicht installiert. Installiere es von https://nodejs.org"
+        
         # Prüfe ob Datei existiert
         if not os.path.exists(script_name):
             st.session_state.debug_logs.append(f"❌ Datei {script_name} nicht gefunden!")
@@ -43,38 +57,61 @@ def start_bot(bot_type="advanced"):
         
         st.session_state.debug_logs.append(f"✅ Datei {script_name} gefunden")
         
-        # Starte Bot in neuem Prozess
-        process = subprocess.Popen(
-            cmd,
-            cwd=os.getcwd(),
-            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
+        # Prüfe ob Dependencies installiert sind
+        if not os.path.exists("node_modules"):
+            st.session_state.debug_logs.append("❌ node_modules fehlt")
+            return None, False, "❌ Dependencies nicht installiert. Führe 'npm install' aus"
         
-        st.session_state.debug_logs.append(f"🚀 Prozess gestartet mit PID: {process.pid}")
+        st.session_state.debug_logs.append("✅ node_modules vorhanden")
         
-        # Kurz warten und prüfen ob Prozess läuft
-        time.sleep(0.5)
-        if process.poll() is not None:
-            # Prozess ist bereits beendet - Fehler aufgetreten
-            stdout, stderr = process.communicate()
-            error_msg = stderr if stderr else stdout if stdout else "Unbekannter Fehler"
-            st.session_state.debug_logs.append(f"❌ Prozess beendet mit Fehler: {error_msg}")
-            return None, False, f"❌ Bot konnte nicht gestartet werden: {error_msg}"
+        # SICHERER Bot-Start ohne Console-Crash
+        try:
+            # Starte ohne CREATE_NEW_CONSOLE um Crashes zu vermeiden
+            process = subprocess.Popen(
+                cmd,
+                cwd=os.getcwd(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
+            )
+            
+            st.session_state.debug_logs.append(f"🚀 Prozess gestartet mit PID: {process.pid}")
+            
+            # Kurz warten und prüfen
+            time.sleep(1)
+            poll_result = process.poll()
+            
+            if poll_result is not None:
+                # Prozess ist beendet - Fehler lesen
+                stdout, stderr = process.communicate(timeout=5)
+                st.session_state.debug_logs.append(f"❌ Prozess beendet mit Code: {poll_result}")
+                if stderr:
+                    st.session_state.debug_logs.append(f"❌ Stderr: {stderr[:200]}...")
+                if stdout:
+                    st.session_state.debug_logs.append(f"📄 Stdout: {stdout[:200]}...")
+                return None, False, f"❌ Bot konnte nicht gestartet werden. Code: {poll_result}"
+            
+            st.session_state.debug_logs.append("✅ Bot läuft erfolgreich im Hintergrund!")
+            
+            # Speichere Prozess für später
+            if 'active_processes' not in st.session_state:
+                st.session_state.active_processes = []
+            st.session_state.active_processes.append({
+                'process': process,
+                'type': bot_type,
+                'pid': process.pid,
+                'start_time': time.time()
+            })
+            
+            return process, True, f"✅ {bot_type.title()} Bot erfolgreich gestartet (PID: {process.pid})!"
+            
+        except Exception as proc_error:
+            st.session_state.debug_logs.append(f"❌ Prozess-Fehler: {str(proc_error)}")
+            return None, False, f"❌ Prozess-Fehler: {str(proc_error)}"
         
-        st.session_state.debug_logs.append(f"✅ Bot läuft erfolgreich!")
-        return process, True, f"✅ {bot_type.title()} Bot erfolgreich gestartet (PID: {process.pid})!"
-        
-    except FileNotFoundError:
-        error_msg = "❌ Node.js nicht gefunden. Installiere Node.js: https://nodejs.org"
-        st.session_state.debug_logs.append(error_msg)
-        return None, False, error_msg
     except Exception as e:
-        error_msg = f"❌ Fehler beim Starten des Bots: {str(e)}"
+        error_msg = f"❌ Unerwarteter Fehler: {str(e)}"
         st.session_state.debug_logs.append(error_msg)
         return None, False, error_msg
 
@@ -889,6 +926,49 @@ def main():
                     st.info("🐛 Debug startet in separatem Fenster...")
                 else:
                     st.error(message)
+        
+        st.markdown("---")
+        
+        # Active Processes Manager
+        st.subheader("🤖 Laufende Bots")
+        
+        if 'active_processes' in st.session_state and st.session_state.active_processes:
+            # Bereinige beendete Prozesse
+            active_procs = []
+            for proc_info in st.session_state.active_processes:
+                if proc_info['process'].poll() is None:  # Prozess läuft noch
+                    active_procs.append(proc_info)
+                else:
+                    st.session_state.debug_logs.append(f"🔴 Bot {proc_info['type']} (PID: {proc_info['pid']}) beendet")
+            
+            st.session_state.active_processes = active_procs
+            
+            if active_procs:
+                for i, proc_info in enumerate(active_procs):
+                    runtime = time.time() - proc_info['start_time']
+                    runtime_str = f"{int(runtime//60)}:{int(runtime%60):02d}"
+                    
+                    col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
+                    
+                    with col1:
+                        st.write(f"🤖 **{proc_info['type'].title()} Bot**")
+                    with col2:
+                        st.write(f"PID: {proc_info['pid']}")
+                    with col3:
+                        st.write(f"⏱️ {runtime_str}")
+                    with col4:
+                        if st.button("🛑", key=f"stop_bot_{proc_info['pid']}", help="Bot stoppen"):
+                            try:
+                                proc_info['process'].terminate()
+                                st.session_state.debug_logs.append(f"🛑 Bot {proc_info['type']} gestoppt")
+                                st.success(f"Bot {proc_info['type']} gestoppt")
+                                safe_rerun()
+                            except Exception as e:
+                                st.error(f"Fehler beim Stoppen: {e}")
+            else:
+                st.info("Keine aktiven Bots")
+        else:
+            st.info("Keine aktiven Bots")
         
         st.markdown("---")
         
