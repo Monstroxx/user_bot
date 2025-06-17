@@ -13,18 +13,24 @@
 - ✅ Automatische Nachrichtenfunktion
 - ✅ Intervall-basierte Nachrichtenwiederholung
 - ✅ Konfigurierbare Wiederholungslimits
+- ✅ Random Delays für natürlichere Timing
+- ✅ Multi-Channel/Multi-Message Support
+- ✅ Erweiterte Konfigurationsvalidierung
+- ✅ Parallele Intervall-Verwaltung
 - ✅ Graceful Shutdown mit Cleanup
-- ✅ Fehlerbehandlung
-- ✅ README mit Anweisungen
+- ✅ Fehlerbehandlung pro Channel
+- ✅ README mit Anweisungen (basic + advanced)
 
 ## In Progress
 - Testen der erweiterten Funktionalität
 
 ## To Do
-- [ ] Weitere Nachrichtenformate (z.B. Embeds)
-- [ ] Mehrere Nachrichten mit Verzögerung
-- [ ] Reaktion auf bestimmte Nachrichten
-- [ ] Geplante Nachrichten (Scheduler)
+- [ ] Web-Interface für Konfiguration
+- [ ] Nachrichtenvorlagen-System
+- [ ] Bedingte Nachrichten (basierend auf Zeit/Tag)
+- [ ] Discord API Integration (Alternative zu Browser-Automation)
+- [ ] Logging und Statistiken
+- [ ] GUI für einfachere Bedienung
 
 ## Known Issues
 Noch keine - Projekt gerade gestartet

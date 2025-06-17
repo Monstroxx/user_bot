@@ -1,0 +1,49 @@
+{
+  "mode": "multi",
+  "globalSettings": {
+    "timeout": 60000,
+    "headless": false,
+    "discordUrl": "https://discord.com/login"
+  },
+  "multiConfigs": [
+    {
+      "name": "Hauptchat - Morgenbegrüßung",
+      "channelId": "1375381872590458891",
+      "message": "Guten Morgen alle zusammen! ☀️ Ich wünsche euch einen tollen Tag!",
+      "sendMessage": true,
+      "messageDelay": 3000,
+      "repeatMessage": true,
+      "repeatInterval": 600000,
+      "maxRepeats": 5,
+      "randomDelay": true,
+      "randomDelayMin": 2000,
+      "randomDelayMax": 8000
+    },
+    {
+      "name": "Updates Channel",
+      "channelId": "CHANNEL_ID_2_HIER_EINFÜGEN",
+      "message": "📢 Automatisches Update: Alles läuft reibungslos! Status: ✅",
+      "sendMessage": true,
+      "messageDelay": 5000,
+      "repeatMessage": true,
+      "repeatInterval": 1800000,
+      "maxRepeats": 0,
+      "randomDelay": true,
+      "randomDelayMin": 10000,
+      "randomDelayMax": 30000
+    },
+    {
+      "name": "Erinnerungen",
+      "channelId": "CHANNEL_ID_3_HIER_EINFÜGEN", 
+      "message": "⏰ Freundliche Erinnerung: Vergisst nicht eure Pause! 😊",
+      "sendMessage": true,
+      "messageDelay": 2000,
+      "repeatMessage": true,
+      "repeatInterval": 3600000,
+      "maxRepeats": 8,
+      "randomDelay": true,
+      "randomDelayMin": 30000,
+      "randomDelayMax": 180000
+    }
+  ]
+}

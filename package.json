@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "start-advanced": "node index-advanced.js",
+    "start-basic": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["discord", "automation", "browser", "puppeteer"],

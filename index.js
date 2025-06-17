@@ -324,8 +324,8 @@ class DiscordBot {
             console.log('   Browser bleibt offen für weitere Nutzung.');
             
             if (this.config.repeatMessage) {
-                const intervalMinutes = Math.round(this.config.repeatInterval / 60000);
-                console.log(`   📝 Nachrichten werden alle ${intervalMinutes} Minuten wiederholt`);
+                const intervalMinutes = Math.round(this.config.repeatInterval / 6000);
+                console.log(`   📝 Nachrichten werden alle ${intervalMinutes} sec wiederholt`);
             }
             
             // Event-Listener für graceful shutdown
