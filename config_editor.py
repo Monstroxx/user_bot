@@ -1,6 +1,10 @@
 import streamlit as st
 import json
 import os
+import subprocess
+import threading
+import time
+import psutil
 from datetime import datetime
 
 # Kompatibilität für verschiedene Streamlit-Versionen
@@ -13,6 +17,85 @@ def safe_rerun():
             st.experimental_rerun()
         except AttributeError:
             st.warning("Bitte die Seite manuell neu laden (F5)")
+
+# Bot-Management Funktionen
+def start_bot(bot_type="advanced"):
+    """Startet den Discord Bot"""
+    try:
+        if bot_type == "advanced":
+            cmd = ["node", "index-advanced.js"]
+        else:
+            cmd = ["node", "index.js"]
+        
+        # Starte Bot in neuem Prozess
+        process = subprocess.Popen(
+            cmd,
+            cwd=os.getcwd(),
+            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        return process, True, "Bot erfolgreich gestartet!"
+        
+    except FileNotFoundError:
+        return None, False, "Node.js nicht gefunden. Stelle sicher, dass Node.js installiert ist."
+    except Exception as e:
+        return None, False, f"Fehler beim Starten des Bots: {str(e)}"
+
+def start_test_tool(tool_type="messages"):
+    """Startet Test-Tools"""
+    try:
+        if tool_type == "messages":
+            cmd = ["node", "test-messages.js"]
+        elif tool_type == "debug-exit":
+            cmd = ["node", "debug-exit.js"]
+        else:
+            return None, False, "Unbekanntes Test-Tool"
+        
+        process = subprocess.Popen(
+            cmd,
+            cwd=os.getcwd(),
+            creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        return process, True, f"{tool_type} Test-Tool gestartet!"
+        
+    except Exception as e:
+        return None, False, f"Fehler beim Starten des Test-Tools: {str(e)}"
+
+def check_dependencies():
+    """Prüft ob alle Dependencies vorhanden sind"""
+    issues = []
+    
+    # Node.js prüfen
+    try:
+        result = subprocess.run(["node", "--version"], capture_output=True, text=True)
+        if result.returncode != 0:
+            issues.append("Node.js nicht verfügbar")
+        else:
+            node_version = result.stdout.strip()
+            st.success(f"✅ Node.js: {node_version}")
+    except FileNotFoundError:
+        issues.append("Node.js nicht installiert")
+    
+    # npm dependencies prüfen
+    if os.path.exists("node_modules"):
+        st.success("✅ npm dependencies installiert")
+    else:
+        issues.append("npm dependencies nicht installiert (npm install ausführen)")
+    
+    # Bot-Dateien prüfen
+    required_files = ["index-advanced.js", "config-advanced.json"]
+    for file in required_files:
+        if os.path.exists(file):
+            st.success(f"✅ {file} vorhanden")
+        else:
+            issues.append(f"{file} fehlt")
+    
+    return issues
 
 # Seitenkonfiguration
 st.set_page_config(
@@ -554,15 +637,84 @@ def main():
         
         st.markdown("---")
         
-        # Bot starten
-        st.subheader("🚀 Bot starten")
-        if st.button("▶️ Advanced Bot starten"):
-            st.code("npm run start-advanced", language="bash")
-            st.info("Führe diesen Befehl im Terminal aus")
+        # System-Check
+        st.subheader("🔧 System-Check")
+        with st.expander("Dependencies prüfen", expanded=False):
+            issues = check_dependencies()
+            if issues:
+                for issue in issues:
+                    st.error(f"❌ {issue}")
+                st.warning("⚠️ Bot kann möglicherweise nicht gestartet werden!")
+            else:
+                st.success("🎯 Alle Dependencies OK!")
         
-        if st.button("🧪 Nachrichten testen"):
-            st.code("npm run test-messages", language="bash")
-            st.info("Teste Nachrichten ohne sie zu senden")
+        st.markdown("---")
+        
+        # Bot starten
+        st.subheader("🚀 Bot Control")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("▶️ Advanced Bot", type="primary", use_container_width=True):
+                if 'bot_process' in st.session_state and st.session_state.bot_process:
+                    st.warning("Bot läuft bereits!")
+                else:
+                    # Speichere Konfiguration vor dem Start
+                    config_manager.save_config(st.session_state.config)
+                    
+                    process, success, message = start_bot("advanced")
+                    if success:
+                        st.session_state.bot_process = process
+                        st.success(message)
+                        st.info("🎮 Bot startet in neuem Fenster...")
+                    else:
+                        st.error(message)
+        
+        with col2:
+            if st.button("⏹️ Bot stoppen", type="secondary", use_container_width=True):
+                if 'bot_process' in st.session_state and st.session_state.bot_process:
+                    try:
+                        st.session_state.bot_process.terminate()
+                        st.session_state.bot_process = None
+                        st.success("Bot gestoppt!")
+                    except:
+                        st.error("Fehler beim Stoppen")
+                else:
+                    st.warning("Kein Bot läuft")
+        
+        # Bot Status
+        if 'bot_process' in st.session_state and st.session_state.bot_process:
+            if st.session_state.bot_process.poll() is None:
+                st.success("🟢 Bot läuft")
+            else:
+                st.error("🔴 Bot gestoppt")
+                st.session_state.bot_process = None
+        
+        st.markdown("---")
+        
+        # Test Tools
+        st.subheader("🧪 Test Tools")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            if st.button("📝 Message Test", use_container_width=True):
+                process, success, message = start_test_tool("messages")
+                if success:
+                    st.success(message)
+                    st.info("🧪 Test startet in neuem Fenster...")
+                else:
+                    st.error(message)
+        
+        with col2:
+            if st.button("🚪 Exit Debug", use_container_width=True):
+                process, success, message = start_test_tool("debug-exit")
+                if success:
+                    st.success(message)
+                    st.info("🐛 Debug startet in neuem Fenster...")
+                else:
+                    st.error(message)
         
         st.markdown("---")
         
@@ -581,6 +733,16 @@ def main():
             if intervals:
                 avg_interval = sum(intervals) / len(intervals) / 1000
                 st.metric("Ø Intervall", f"{avg_interval:.1f}s")
+        
+        # Live Bot Info
+        if 'bot_process' in st.session_state and st.session_state.bot_process:
+            if st.session_state.bot_process.poll() is None:
+                st.metric("Bot Status", "🟢 Running")
+                
+                # Auto-refresh für Bot Status
+                time.sleep(0.1)
+                if st.button("🔄 Status refresh", key="status_refresh"):
+                    safe_rerun()
     
     # Hauptbereich
     config = st.session_state.config
@@ -603,7 +765,7 @@ def main():
         safe_rerun()
     
     # Tabs
-    tab1, tab2, tab3, tab4 = st.tabs(["🌐 Global", "🎯 Konfiguration", "🎮 Presets", "📋 JSON View"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["🌐 Global", "🎯 Konfiguration", "🎮 Presets", "🤖 Bot Control", "📋 JSON View"])
     
     with tab1:
         render_global_settings(config)
@@ -619,6 +781,9 @@ def main():
         render_presets()
     
     with tab4:
+        render_bot_control_tab(config_manager)
+    
+    with tab5:
         st.subheader("📋 Aktuelle Konfiguration (JSON)")
         st.json(config)
         

@@ -23,6 +23,10 @@
 - ✅ Fehlerbehandlung pro Channel
 - ✅ README mit Anweisungen (basic + advanced)
 - ✅ Gaming Bot optimierte Features (OwO Bot etc.)
+- ✅ Anti-Message-Merging System (deaktiviert nach Problemen)
+- ✅ Streamlit Web Interface für Konfiguration
+- ✅ Visual Editor mit Presets und Import/Export
+- ✅ Comprehensive Documentation und Guides
 
 ## In Progress
 - Testen der erweiterten Funktionalität

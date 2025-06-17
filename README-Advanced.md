@@ -121,6 +121,24 @@ user_bot/
 ```
 
 Beide Versionen können parallel verwendet werden!
+## 🎛️ **Streamlit Web Interface (NEU!)**
+
+**Benutzerfreundliche grafische Oberfläche zur Konfiguration:**
+
+```bash
+npm run config-editor
+# oder
+streamlit run config_editor.py
+```
+
+**Features:**
+- 🎨 **Visual Editor** - Keine JSON-Bearbeitung nötig
+- 🎮 **OwO Bot Presets** - Vorgefertigte Konfigurationen
+- 📱 **Responsive Design** - Funktioniert auf Desktop und Mobile
+- 💾 **Auto-Backup** - Automatische Sicherung vor Änderungen
+- 📊 **Live Preview** - Echzeit JSON-Ansicht
+- 📥 **Import/Export** - Konfigurationen teilen und sichern
+
 ## 🆕 Neueste Features (v2.0)
 
 ### 🎲 Random Message Selection
