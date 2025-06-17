@@ -20,12 +20,28 @@ def safe_rerun():
 
 # Bot-Management Funktionen
 def start_bot(bot_type="advanced"):
-    """Startet den Discord Bot"""
+    """Startet den Discord Bot mit Live-Logging"""
     try:
         if bot_type == "advanced":
             cmd = ["node", "index-advanced.js"]
+            script_name = "index-advanced.js"
         else:
             cmd = ["node", "index.js"]
+            script_name = "index.js"
+        
+        # Debug-Info in Session State speichern für Anzeige
+        if 'debug_logs' not in st.session_state:
+            st.session_state.debug_logs = []
+        
+        st.session_state.debug_logs.append(f"🔧 Starte Befehl: {' '.join(cmd)}")
+        st.session_state.debug_logs.append(f"📁 Arbeitsverzeichnis: {os.getcwd()}")
+        
+        # Prüfe ob Datei existiert
+        if not os.path.exists(script_name):
+            st.session_state.debug_logs.append(f"❌ Datei {script_name} nicht gefunden!")
+            return None, False, f"❌ Datei {script_name} nicht gefunden!"
+        
+        st.session_state.debug_logs.append(f"✅ Datei {script_name} gefunden")
         
         # Starte Bot in neuem Prozess
         process = subprocess.Popen(
@@ -33,15 +49,34 @@ def start_bot(bot_type="advanced"):
             cwd=os.getcwd(),
             creationflags=subprocess.CREATE_NEW_CONSOLE if os.name == 'nt' else 0,
             stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            stderr=subprocess.PIPE,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         )
         
-        return process, True, "Bot erfolgreich gestartet!"
+        st.session_state.debug_logs.append(f"🚀 Prozess gestartet mit PID: {process.pid}")
+        
+        # Kurz warten und prüfen ob Prozess läuft
+        time.sleep(0.5)
+        if process.poll() is not None:
+            # Prozess ist bereits beendet - Fehler aufgetreten
+            stdout, stderr = process.communicate()
+            error_msg = stderr if stderr else stdout if stdout else "Unbekannter Fehler"
+            st.session_state.debug_logs.append(f"❌ Prozess beendet mit Fehler: {error_msg}")
+            return None, False, f"❌ Bot konnte nicht gestartet werden: {error_msg}"
+        
+        st.session_state.debug_logs.append(f"✅ Bot läuft erfolgreich!")
+        return process, True, f"✅ {bot_type.title()} Bot erfolgreich gestartet (PID: {process.pid})!"
         
     except FileNotFoundError:
-        return None, False, "Node.js nicht gefunden. Stelle sicher, dass Node.js installiert ist."
+        error_msg = "❌ Node.js nicht gefunden. Installiere Node.js: https://nodejs.org"
+        st.session_state.debug_logs.append(error_msg)
+        return None, False, error_msg
     except Exception as e:
-        return None, False, f"Fehler beim Starten des Bots: {str(e)}"
+        error_msg = f"❌ Fehler beim Starten des Bots: {str(e)}"
+        st.session_state.debug_logs.append(error_msg)
+        return None, False, error_msg
 
 def start_test_tool(tool_type="messages"):
     """Startet Test-Tools"""
@@ -838,7 +873,7 @@ def main():
         col1, col2 = st.columns(2)
         
         with col1:
-            if st.button("📝 Message Test", use_container_width=True):
+            if st.button("📝 Message Test", use_container_width=True, key="bot_control_message_test"):
                 process, success, message = start_test_tool("messages")
                 if success:
                     st.success(message)
@@ -847,13 +882,38 @@ def main():
                     st.error(message)
         
         with col2:
-            if st.button("🚪 Exit Debug", use_container_width=True):
+            if st.button("🚪 Exit Debug", use_container_width=True, key="bot_control_exit_debug"):
                 process, success, message = start_test_tool("debug-exit")
                 if success:
                     st.success(message)
                     st.info("🐛 Debug startet in separatem Fenster...")
                 else:
                     st.error(message)
+        
+        st.markdown("---")
+        
+        # Debug Logs
+        st.subheader("🔍 Debug Logs")
+        
+        if 'debug_logs' in st.session_state and st.session_state.debug_logs:
+            # Zeige letzte 10 Log-Einträge
+            recent_logs = st.session_state.debug_logs[-10:]
+            
+            with st.expander("📋 Debug Output", expanded=True):
+                for log in recent_logs:
+                    st.text(log)
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🗑️ Logs löschen", key="clear_debug_logs"):
+                        st.session_state.debug_logs = []
+                        safe_rerun()
+                
+                with col2:
+                    if st.button("🔄 Aktualisieren", key="refresh_debug_logs"):
+                        safe_rerun()
+        else:
+            st.info("Keine Debug-Logs verfügbar. Starte einen Bot um Logs zu sehen.")
         
         st.markdown("---")
         
