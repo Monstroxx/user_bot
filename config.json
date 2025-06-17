@@ -1,0 +1,12 @@
+{
+  "channelId": "IHRE_CHANNEL_ID_HIER",
+  "message": "Hallo! Ich bin automatisch hier angekommen! 🤖",
+  "timeout": 60000,
+  "headless": false,
+  "discordUrl": "https://discord.com/login",
+  "sendMessage": true,
+  "messageDelay": 2000,
+  "repeatMessage": false,
+  "repeatInterval": 300000,
+  "maxRepeats": 0
+}
