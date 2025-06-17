@@ -9,6 +9,7 @@
     "start-basic": "node index.js",
     "debug-exit": "node debug-exit.js",
     "test-messages": "node test-messages.js",
+    "config-editor": "streamlit run config_editor.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": ["discord", "automation", "browser", "puppeteer"],
